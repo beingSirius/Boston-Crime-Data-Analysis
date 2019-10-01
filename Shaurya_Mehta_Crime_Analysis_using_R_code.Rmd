@@ -1,0 +1,340 @@
+---
+title: "Shaurya's Lens ( Analysing Boston Crime Data for Assignment 2) "
+output: html_notebook
+---
+```{r}
+#Most Dangerous hour
+
+criminalData<-read.csv("C://Users/shaur/Desktop/ALY6000 Practice/ALY6000 practice/crimeincidentreports.csv",header = TRUE)
+require(sqldf)
+#Package for the colour
+
+#install.packages("wesanderson")
+library(wesanderson)
+
+Shoot_data <- sqldf('select SHOOTING,YEAR,HOUR, count(*) as COUNT  from criminalData where SHOOTING = "Y" GROUP BY SHOOTING,YEAR,HOUR order by COUNT DESC' )
+
+#View(Shoot_data)
+#Converting Year and Hour into factor
+Shoot_data$YEAR<-as.factor(Shoot_data$YEAR)
+Shoot_data$HOUR<-as.factor(Shoot_data$HOUR)
+#str(Shoot_data)
+
+#Plotting line graph, with customized background, axis texts, legends, line colour, etc. based of year wise category
+hour_shoot<-ggplot(data=Shoot_data, aes(x=HOUR, y=COUNT, group=YEAR, color=YEAR))+ 
+  geom_line(stat='summary', size=1.2) + 
+  geom_point(stat='summary', fun.y='mean',size=2)+
+  scale_color_manual(values=wes_palette(n=4, name="Moonrise3"))+
+  labs(x = 'Nth Hour', y = 'Shooting Incident Count', fill = NULL, title = "")+
+  theme(legend.position="top")+
+  theme(panel.background = element_rect(fill = 'light yellow', colour = 'red'))+
+  theme(axis.title.x=element_text(size = 15,face ='bold'),
+        axis.text.x=element_text(size = 12,face ='bold'),
+        axis.ticks.x=element_blank())+
+  theme(axis.text.y = element_text( size = 12,face = 'bold'), 
+        axis.title.y = element_text(size = 15,face ='bold'))+
+  theme(legend.text=element_text(size=12,face ='bold'),legend.title =element_text(size = 15,face ='bold') )
+
+hour_shoot
+#Commnad for exporting high quality image
+#tiff("MOst_Dangerous_hour.tiff", units="in", width=16, height=9, res=300)
+
+#hour_shoot
+
+#closing the file function, run the same in console to bring back the controls to plotting area
+#dev.off()
+
+
+```
+
+
+```{r}
+#Most crime prone street having the all UCRs in high numbers
+
+cd2<-read.csv("C://Users/shaur/Desktop/ALY6000 Practice/ALY6000 practice/crimeincidentreports.csv",header = TRUE)
+#dim(cd2)
+#View(cd2)
+#Excluding duplicate rows
+cd1<-unique(cd2, by = "INCIDENT_NUMBER")
+
+#dim(cd2)
+#Excluding blank streets
+cd2 <- cd2[-which(cd2$STREET == ""), ]
+#Converting year to Categorial data
+cd2$YEAR<-as.factor(cd2$YEAR)
+
+require(sqldf)
+UCR2015<-sqldf('select STREET,YEAR,UCR_PART, Count(*) as Count from cd2 where YEAR = "2015" GROUP BY STREET,YEAR,UCR_PART ORDER BY Count  DESC limit 10 ')
+UCR2016<-sqldf('select STREET,YEAR,UCR_PART, Count(*) as Count from cd2 where YEAR = "2016" GROUP BY STREET,YEAR,UCR_PART ORDER BY Count  DESC limit 10 ')
+UCR2017<-sqldf('select STREET,YEAR,UCR_PART, Count(*) as Count from cd2 where YEAR = "2017" GROUP BY STREET,YEAR,UCR_PART ORDER BY Count  DESC limit 10 ')
+UCR2018<-sqldf('select STREET,YEAR,UCR_PART, Count(*) as Count from cd2 where YEAR = "2018" GROUP BY STREET,YEAR,UCR_PART ORDER BY Count  DESC limit 10 ')
+#View(UCR2015)
+#View(UCR2016)
+#View(UCR2017)
+#View(UCR2018)
+library(wesanderson)
+
+#Binding all dataframes in a single data frame
+Top_ten_UCR <- rbind(UCR2015,UCR2016,UCR2017,UCR2018)
+
+#View(Top_ten_UCR)
+
+require(ggplot2)
+
+
+Plot_UCR = ggplot(Top_ten_UCR, aes(x=STREET, y=Count,fill=UCR_PART)) + geom_bar(stat="identity", width=1)+
+  scale_fill_manual(values=wes_palette(n=3, name="BottleRocket2")) 
+
+Plot_UCR=Plot_UCR + theme(axis.text.x = element_text(colour = 'black', angle = 45, size = 15,hjust = 0.5, vjust = 0.5,face = 'bold'),axis.title.x=element_blank())+
+  theme(axis.text.y = element_text(colour = 'black', size = 15), axis.title.y = element_text(size = 15, hjust = 0.5, vjust = 0.2)) + 
+  theme(strip.text.y = element_text(size = 11, hjust = 0.5, vjust = 0.5, face = 'bold'))+
+  theme(panel.background = element_rect(fill = 'cornsilk2'))+
+  theme(legend.text=element_text(size=15,face ='bold'),legend.title =element_text(size = 15,face ='bold') )  
+Plot_UCR
+
+
+```
+
+
+
+```{r}
+#SHooting on DISTRICT Scale: to check for the most shooting prone District
+
+#Loading the master csv file
+criminalData<-read.csv("C://Users/shaur/Desktop/ALY6000 Practice/ALY6000 practice/crimeincidentreports.csv",header = TRUE)
+count1<-rep(1,322281)
+
+criminalData$Count<-count1
+
+#Subsetting the Shooting data with SHOOTING as 'Y'
+Shooting_data<-subset(criminalData,SHOOTING == 'Y')
+
+#data review
+
+#View(Shooting_data)
+#dim(Shooting_data)
+#str(Shooting_data)
+
+#Converting Year as a categorical data
+Shooting_data$YEAR<-as.factor(Shooting_data$YEAR)
+
+#Plotting graph
+p <-ggplot(Shooting_data, aes(x=DISTRICT, y=Count,fill=YEAR))
+
+p = p +geom_bar(stat = "identity")
+
+p = p + labs(x = "Districts", y = 'Shooting Incidents', fill = 'Year', title = "Shooting prone Districts on Yearly Basis")
+
+p = p + theme(axis.title.x=element_text(size = 15,face ='bold'),
+              axis.text.x=element_text(size = 12,face ='bold'),
+              axis.ticks.x=element_blank())+
+  theme(axis.text.y = element_text( size = 12,face = 'bold'), 
+        axis.title.y = element_text(size = 15,face ='bold'))+
+  theme(legend.text=element_text(size=12,face ='bold'),legend.title =element_text(size = 15,face ='bold') )
+p
+
+
+
+
+
+
+```
+
+
+
+```{r}
+#Most crime prone street on the basis on crime count and years
+
+cd1<-read.csv("C://Users/shaur/Desktop/ALY6000 Practice/ALY6000 practice/crimeincidentreports.csv",header = TRUE)
+#dim(cd1)
+#View(cd1)
+cd1<-unique(cd1, by = "INCIDENT_NUMBER")
+#dim(cd1)
+require(sqldf)
+street1<-sqldf('select STREET,YEAR, Count(*) as Count from cd  GROUP BY STREET,YEAR order by count(*) desc ')
+#View(street1)
+street1$YEAR<-as.factor(street1$YEAR)
+#Removing blanks
+
+street1 <- street1[-which(street1$STREET == ""), ]
+street1<- street1[c(1:40),]
+#View(street1)
+require(ggplot2)
+
+#line plot includes the code for graph tittles, legends etc
+ggplot(data=street1, aes(x=YEAR, y=Count, group=STREET, color=STREET))+ 
+  geom_line(stat='summary', size=1.2) + 
+  geom_point(stat='summary', fun.y='mean',size=2)+labs(x = NULL, y = 'Criminal Activity Count', fill = NULL, title = "")+
+  theme(axis.text.x = element_text(colour = 'black', angle = 45, size = 15,hjust = 0.5, vjust = 0.5,face = 'bold'),axis.title.x=element_blank())+
+  theme(axis.text.y = element_text(colour = 'black', size = 15), axis.title.y = element_text(size = 15, hjust = 0.5, vjust = 0.2)) + 
+  theme(strip.text.y = element_text(size = 11, hjust = 0.5, vjust = 0.5, face = 'bold'))+
+  theme(panel.background = element_rect(fill = 'cornsilk2'))+
+theme(legend.text=element_text(size=15,face ='bold'),legend.title =element_text(size = 15,face ='bold') )  
+
+
+```
+
+
+
+
+```{r}
+#Creating pie for Year 2015 : Block wise
+
+library(ggplot2)
+require(sqldf)
+
+#View(criminalData)
+DIS_Pie4<-sqldf('select   DISTRICT, count(*) from criminalData where YEAR ="2015" GROUP BY DISTRICT order by count(*) desc' )
+#View(DIS_Pie4)
+DIS_Pie4 <- DIS_Pie4[-which(DIS_Pie4$DISTRICT == ""), ]
+#View(DIS_Pie4)
+names(DIS_Pie4)<-c("District","Crime_numbers")
+DIS_Pie4$Crime_percentage <-round(((DIS_Pie4$Crime_numbers/(sum(DIS_Pie4$Crime_numbers)))*100),digit=2)
+DIS_Pie4$Crime_percentage
+#str(DIS_Pie4$Crime_percentage)
+#View(DIS_Pie4)
+
+# Create a basic bar
+pie2015 = ggplot(DIS_Pie4, aes(x="", y=Crime_percentage, fill=District)) + geom_bar(stat="identity", width=1)
+
+# Convert to pie (polar coordinates) and add labels
+pie2015 = pie2015 + coord_polar("y", start=0) + geom_text(aes(label = paste0(round(Crime_percentage), "%")),size=4, position = position_stack(vjust = 0.5))
+
+# Remove labels and add title
+pie2015 = pie2015 + labs(x = NULL, y = NULL, fill = NULL, title = "Crime Rate in Districts: 2015")
+
+# Tidy up the theme
+pie2015 = pie2015 + theme_classic() + theme(axis.line = element_blank(),
+                                            axis.text = element_blank(),
+                                            axis.ticks = element_blank(),
+                                            plot.title = element_text(hjust = 0.5, color = "#666666"))
+pie2015
+
+```
+
+
+
+
+```{r}
+#Creating pie for Year 2016 : Block wise
+
+library(ggplot2)
+require(sqldf)
+
+#View(criminalData)
+DIS_Pie3<-sqldf('select   DISTRICT, count(*) from criminalData where YEAR ="2016" GROUP BY DISTRICT order by count(*) desc' )
+#View(DIS_Pie3)
+DIS_Pie3 <- DIS_Pie3[-which(DIS_Pie3$DISTRICT == ""), ]
+#View(DIS_Pie3)
+names(DIS_Pie3)<-c("District","Crime_numbers")
+DIS_Pie3$Crime_percentage <-round(((DIS_Pie3$Crime_numbers/(sum(DIS_Pie3$Crime_numbers)))*100),digit=2)
+DIS_Pie3$Crime_percentage
+#str(DIS_Pie3$Crime_percentage)
+#View(DIS_Pie3)
+
+# Create a basic bar
+pie2016 = ggplot(DIS_Pie3, aes(x="", y=Crime_percentage, fill=District)) + geom_bar(stat="identity", width=1)
+
+# Convert to pie (polar coordinates) and add labels
+pie2016 = pie2016 + coord_polar("y", start=0) + geom_text(aes(label = paste0(round(Crime_percentage), "%")),size=4,position = position_stack(vjust = 0.5))
+
+# Remove labels and add title
+pie2016 = pie2016 + labs(x = NULL, y = NULL, fill = NULL, title = "Crime Rate in Districts: 2016")
+
+# Tidy up the theme
+pie2016 = pie2016 + theme_classic() + theme(axis.line = element_blank(),
+                                            axis.text = element_blank(),
+                                            axis.ticks = element_blank(),
+                                            plot.title = element_text(hjust = 0.5, color = "#666666"))
+pie2016
+
+
+```
+```{r}
+#Creating pie for Year 2017 : District wise
+
+library(ggplot2)
+require(sqldf)
+
+#View(criminalData)
+DIS_Pie2<-sqldf('select   DISTRICT, count(*) from criminalData where YEAR ="2017" GROUP BY DISTRICT order by count(*) desc' )
+#View(DIS_Pie2)
+DIS_Pie2 <- DIS_Pie2[-which(DIS_Pie2$DISTRICT == ""), ]
+#View(DIS_Pie2)
+names(DIS_Pie2)<-c("District","Crime_numbers")
+DIS_Pie2$Crime_percentage <-round(((DIS_Pie2$Crime_numbers/(sum(DIS_Pie2$Crime_numbers)))*100),digit=2)
+DIS_Pie2$Crime_percentage
+#str(DIS_Pie2$Crime_percentage)
+#View(DIS_Pie2)
+
+# Create a basic bar
+pie2017 = ggplot(DIS_Pie2, aes(x="", y=Crime_percentage, fill=District)) + geom_bar(stat="identity", width=1)
+
+# Convert to pie (polar coordinates) and add labels
+pie2017 = pie2017 + coord_polar("y", start=0) + geom_text(aes(label = paste0(round(Crime_percentage), "%")),size=4, position = position_stack(vjust = 0.5))
+
+# Remove labels and add title
+pie2017 = pie2017 + labs(x = NULL, y = NULL, fill = NULL, title = "Crime Rate in Districts: 2017")
+
+# Tidy up the theme
+pie2017 = pie2017 + theme_classic() + theme(axis.line = element_blank(),
+                                            axis.text = element_blank(),
+                                            axis.ticks = element_blank(),
+                                            plot.title = element_text(hjust = 0.5, color = "#666666"))
+pie2017
+
+```
+```{r}
+#Creating pie for Year 2018 : District wise
+
+library(ggplot2)
+require(sqldf)
+
+#View(criminalData)
+DIS_Pie1<-sqldf('select   DISTRICT, count(*) from criminalData where YEAR ="2018" GROUP BY DISTRICT order by count(*) desc' )
+#View(DIS_Pie1)
+DIS_Pie1 <- DIS_Pie1[-which(DIS_Pie1$DISTRICT == ""), ]
+#View(DIS_Pie1)
+names(DIS_Pie1)<-c("District","Crime_numbers")
+DIS_Pie1$Crime_percentage <-round(((DIS_Pie1$Crime_numbers/(sum(DIS_Pie1$Crime_numbers)))*100),digit=2)
+DIS_Pie1$Crime_percentage
+#str(DIS_Pie1$Crime_percentage)
+#View(DIS_Pie1)
+
+# Create a basic bar
+pie2018 = ggplot(DIS_Pie1, aes(x="", y=Crime_percentage, fill=District)) + geom_bar(stat="identity", width=1)
+
+# Convert to pie (polar coordinates) and add labels
+pie2018 = pie2018 + coord_polar("y", start=0) + geom_text(aes(label = paste0(round(Crime_percentage), "%")),size =4, position = position_stack(vjust = 0.5))
+
+# Remove labels and add title
+pie2018 = pie2018 + labs(x = NULL, y = NULL, fill = NULL, title = "Crime Rate in Districts: 2018")
+
+# Tidy up the theme
+pie2018 = pie2018 + theme_classic() + theme(axis.line = element_blank(),
+                                            axis.text = element_blank(),
+                                            axis.ticks = element_blank(),
+                                            plot.title = element_text(hjust = 0.5, color = "#666666"))
+pie2018
+
+```
+```{r}
+#Marking shootingincident sights on Boston Map
+#install.packages("ggmap")
+require(devtools)
+#devtools::install_github("dkahle/ggmap", ref = "tidyup")
+library(ggmap)
+register_google(key = "Key has been removed after testing the code")
+newmap<-read.csv("C://Users/shaur/Desktop/ALY6000 Practice/ALY6000 practice/crimeincidentreports.csv",header = TRUE)
+require(sqldf)
+#str(newmap)
+#View(newmap)
+newmap1<-sqldf('select Lat,Long,YEAR from newmap where SHOOTING = "Y"')
+#dim(newmap)
+#View(newmap1)
+newmap1$YEAR<-as.factor(newmap1$YEAR)
+Boston <- get_map("Boston", zoom = 12)
+ggmap(Boston)+ geom_point(aes(x = Long, y = Lat,colour = YEAR),data = newmap1) +ggtitle("Year Wise Shooting ")
+
+```
+
